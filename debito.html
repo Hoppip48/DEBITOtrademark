@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEBITO™</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #09090e;
+  --bg2: #111118;
+  --bg3: #1a1a25;
+  --border: #2a2a3a;
+  --gold: #c9a96e;
+  --gold-dim: #7a6040;
+  --cream: #f2ede4;
+  --red: #c0392b;
+  --red-dim: #7a2018;
+  --text: #d8d0bc;
+  --text-dim: #6a6460;
+  --success: #2ecc71;
+  --pip-on: #c9a96e;
+  --pip-off: #2a2a3a;
+  --card-bg: #f7f2e8;
+  --card-red: #b52820;
+  --card-black: #1a1820;
+  --radius: 12px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(ellipse at 20% 50%, rgba(30,20,60,0.4) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 20%, rgba(60,20,20,0.3) 0%, transparent 50%);
+}
+
+/* ====== HEADER ====== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(9,9,14,0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+}
+
+.debito-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.player-debito {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.player-debito.p2 { align-items: flex-end; }
+
+.player-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.debito-display {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.p2 .debito-display { flex-direction: row-reverse; }
+
+.debito-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.debito-value {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--gold);
+  line-height: 1;
+  transition: color 0.3s;
+}
+
+.debito-value.danger { color: var(--red); }
+.debito-value.safe { color: var(--success); }
+
+.pip-bar {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.p2 .pip-bar { flex-direction: row-reverse; }
+
+.pip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: background 0.4s, transform 0.3s;
+}
+
+.pip.on { background: var(--pip-on); }
+.pip.off { background: var(--pip-off); }
+.pip.losing { background: var(--red-dim); transform: scale(1.3); }
+
+.game-title-header {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.2em;
+  color: var(--gold);
+  text-align: center;
+  text-shadow: 0 0 30px rgba(201,169,110,0.4);
+}
+
+.turn-info {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  margin-top: 4px;
+}
+
+/* ====== MAIN CONTENT ====== */
+.main-content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+/* ====== PHASE SCREEN ====== */
+.phase-screen {
+  animation: fadeIn 0.35s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.phase-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--gold);
+  text-align: center;
+  margin-bottom: 6px;
+  letter-spacing: 0.05em;
+}
+
+.phase-subtitle {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 1.05rem;
+  font-style: italic;
+  margin-bottom: 28px;
+}
+
+/* ====== CARDS ====== */
+.hand-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  padding: 16px 0;
+}
+
+.card-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.card-wrapper:hover .card { transform: translateY(-8px); box-shadow: 0 16px 40px rgba(201,169,110,0.25); }
+.card-wrapper.selected .card { transform: translateY(-12px); box-shadow: 0 20px 50px rgba(201,169,110,0.5); outline: 2px solid var(--gold); }
+.card-wrapper.disabled { opacity: 0.35; pointer-events: none; }
+.card-wrapper.selected-for-multi .card { transform: translateY(-12px); outline: 2px solid #5bc8af; box-shadow: 0 20px 50px rgba(91,200,175,0.4); }
+
+.card {
+  width: 70px;
+  height: 100px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(0,0,0,0.08);
+  user-select: none;
+}
+
+.card-corner {
+  position: absolute;
+  font-size: 0.65rem;
+  line-height: 1.1;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+}
+
+.card-corner.tl { top: 5px; left: 6px; }
+.card-corner.br { bottom: 5px; right: 6px; transform: rotate(180deg); }
+
+.card-center {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.card.red .card-corner,
+.card.red .card-center { color: var(--card-red); }
+
+.card.black .card-corner,
+.card.black .card-center { color: var(--card-black); }
+
+.card.joker-card {
+  background: linear-gradient(135deg, #1a1240 0%, #2a1060 50%, #1a1240 100%);
+  border: 1px solid var(--gold-dim);
+}
+
+.card.joker-card .card-center { font-size: 2rem; }
+.card.joker-card .card-corner { color: var(--gold); font-size: 0.7rem; }
+
+.card.face-down {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: default;
+}
+
+.card-back-pattern {
+  font-size: 2.5rem;
+  color: rgba(255,255,255,0.08);
+}
+
+.card-meta {
+  text-align: center;
+  font-size: 0.68rem;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+}
+
+.card-debito {
+  font-size: 0.72rem;
+  color: var(--gold-dim);
+  font-style: italic;
+}
+
+.card-source {
+  font-size: 0.6rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.card-source.banco { color: #5bc8af; }
+
+/* ====== BANCO SECTION ====== */
+.section-divider {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin: 16px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.section-divider.banco { color: #5bc8af; }
+.section-divider.banco::before,
+.section-divider.banco::after { background: rgba(91,200,175,0.3); }
+
+/* ====== BUTTONS ====== */
+.btn {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.12em;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: #09090e;
+  font-weight: 600;
+}
+
+.btn-primary:hover { background: #d4b57e; transform: translateY(-1px); box-shadow: 0 8px 24px rgba(201,169,110,0.3); }
+.btn-primary:active { transform: translateY(0); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover { border-color: var(--text-dim); color: var(--text); }
+
+.btn-danger {
+  background: var(--red-dim);
+  color: var(--cream);
+}
+
+.btn-danger:hover { background: var(--red); }
+
+/* ====== ACTION BAR ====== */
+.action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+.selected-info {
+  color: var(--text);
+  font-size: 0.95rem;
+  text-align: center;
+  padding: 8px 16px;
+  background: rgba(201,169,110,0.08);
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+}
+
+/* ====== COVER SCREEN ====== */
+.cover-screen {
+  min-height: 60vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.cover-icon {
+  font-size: 4rem;
+  filter: grayscale(0.3);
+}
+
+.cover-message {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.8rem;
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.cover-sub {
+  color: var(--text-dim);
+  font-style: italic;
+  font-size: 1rem;
+  max-width: 360px;
+}
+
+/* ====== REVEAL ====== */
+.reveal-area {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 24px;
+  margin: 20px 0;
+}
+
+.reveal-side {
+  flex: 1;
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.reveal-player-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  color: var(--gold);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.vs-divider {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--text-dim);
+  padding-top: 50px;
+  letter-spacing: 0.1em;
+}
+
+.debito-loss {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.6rem;
+  color: var(--red);
+  font-weight: 900;
+  animation: lossFlash 0.5s ease;
+}
+
+.debito-gain {
+  font-size: 0.9rem;
+  color: var(--success);
+  font-style: italic;
+}
+
+@keyframes lossFlash {
+  0% { transform: scale(1.5); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.combo-value {
+  font-size: 0.85rem;
+  color: var(--gold-dim);
+  font-style: italic;
+}
+
+.joker-copy-label {
+  font-size: 0.8rem;
+  color: #9b8dc0;
+  font-style: italic;
+}
+
+.result-notes {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 16px 0;
+}
+
+.note {
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-bottom: 4px;
+  font-style: italic;
+}
+
+.note:last-child { margin-bottom: 0; }
+
+.debito-status-bar {
+  display: flex;
+  justify-content: space-around;
+  padding: 12px;
+  background: rgba(201,169,110,0.05);
+  border-radius: 6px;
+  margin: 12px 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+}
+
+.reveal-winner-banner {
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: var(--gold);
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--gold-dim);
+  border-radius: 4px;
+  background: rgba(201,169,110,0.06);
+}
+
+.reveal-draw-banner {
+  text-align: center;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: var(--text-dim);
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+/* ====== START SCREEN ====== */
+.start-screen {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  animation: fadeIn 0.5s ease;
+}
+
+.start-logo {
+  font-family: 'Playfair Display', serif;
+  font-size: 5rem;
+  font-weight: 900;
+  color: var(--gold);
+  letter-spacing: 0.25em;
+  text-shadow: 0 0 60px rgba(201,169,110,0.4), 0 0 120px rgba(201,169,110,0.2);
+  line-height: 1;
+}
+
+.start-trademark {
+  font-size: 2rem;
+  vertical-align: super;
+}
+
+.start-subtitle {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  color: var(--text-dim);
+  letter-spacing: 0.15em;
+  font-style: italic;
+}
+
+.start-separator {
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-dim), transparent);
+  margin: 8px auto;
+}
+
+.rules-summary {
+  max-width: 480px;
+  text-align: left;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin: 16px 0;
+}
+
+.rules-summary h3 {
+  font-family: 'Playfair Display', serif;
+  color: var(--gold);
+  margin-bottom: 12px;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rule-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+
+.rule-card-label {
+  font-weight: 700;
+  color: var(--gold);
+  min-width: 50px;
+  font-family: 'Playfair Display', serif;
+}
+
+/* ====== GAME OVER ====== */
+.game-over-screen {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  text-align: center;
+}
+
+.game-over-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  letter-spacing: 0.4em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+
+.game-over-winner {
+  font-family: 'Playfair Display', serif;
+  font-size: 3rem;
+  font-weight: 900;
+  color: var(--gold);
+  text-shadow: 0 0 60px rgba(201,169,110,0.5);
+  line-height: 1.2;
+}
+
+.game-over-scores {
+  display: flex;
+  gap: 40px;
+  color: var(--text-dim);
+  font-size: 1rem;
+}
+
+/* ====== JOKER PICK ====== */
+.joker-pick-screen { }
+
+.joker-banner {
+  background: linear-gradient(135deg, rgba(26,18,64,0.8), rgba(42,16,96,0.8));
+  border: 1px solid rgba(201,169,110,0.3);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.joker-banner-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.4rem;
+  color: var(--gold);
+}
+
+.joker-banner-sub {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* Reveal cards pop-up area */
+.played-preview {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin: 12px 0 24px;
+  padding: 16px;
+  background: var(--bg3);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+}
+
+.played-preview-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.played-preview-name {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ====== RESPONSIVE ====== */
+@media (max-width: 600px) {
+  .debito-bar { gap: 8px; }
+  .debito-value { font-size: 1.5rem; }
+  .game-title-header { font-size: 1rem; }
+  .card { width: 58px; height: 84px; }
+  .card-center { font-size: 1.3rem; }
+  .card-corner { font-size: 0.58rem; }
+  .reveal-area { flex-direction: column; align-items: center; }
+  .vs-divider { padding-top: 0; }
+  .phase-title { font-size: 1.4rem; }
+}
+
+/* Highlight animation for selection */
+@keyframes pulse-gold {
+  0%, 100% { box-shadow: 0 20px 50px rgba(201,169,110,0.4); }
+  50% { box-shadow: 0 20px 50px rgba(201,169,110,0.7); }
+}
+
+.card-wrapper.selected .card {
+  animation: pulse-gold 1.5s infinite;
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+'use strict';
+
+// ============================
+// CONSTANTS & UTILS
+// ============================
+const SUITS = ['♠', '♥', '♦', '♣'];
+const VALUES = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const RED_SUITS = new Set(['♥','♦']);
+
+let _uid = 0;
+function uid() { return ++_uid; }
+
+function createDeck() {
+  const deck = [];
+  for (const suit of SUITS) {
+    for (const val of VALUES) {
+      deck.push({ id: uid(), value: val, suit });
+    }
+  }
+  deck.push({ id: uid(), value: 'JOKER', suit: null });
+  deck.push({ id: uid(), value: 'JOKER', suit: null });
+  return shuffle(deck);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function cardDebitoVal(card) {
+  if (!card) return 0;
+  const v = card.value;
+  if (v === 'A') return 1;
+  if (v === 'J') return 5;
+  if (v === 'Q') return 6;
+  if (v === 'K') return 7;
+  if (v === 'JOKER') return 0;
+  return parseInt(v);
+}
+
+function isNumCard(card) {
+  return card && ['2','3','4','5','6','7','8','9','10'].includes(card.value);
+}
+
+function isFigureCard(card) {
+  return card && ['J','Q','K'].includes(card.value);
+}
+
+function playTotalValue(play) {
+  return play.cards.reduce((s, c) => s + (isNumCard(c) ? parseInt(c.value) : 0), 0);
+}
+
+function getBaseDebito(play) {
+  const main = play.cards[0];
+  if (main.value === 'JOKER') {
+    return play.jokerCopy ? cardDebitoVal(play.jokerCopy) : 0;
+  }
+  if (play.cards.length > 1) {
+    return parseInt(play.cards[0].value);
+  }
+  return cardDebitoVal(main);
+}
+
+// ============================
+// GAME STATE
+// ============================
+let G = null;
+
+function initGame() {
+  _uid = 0;
+  const deck = createDeck();
+  G = {
+    deck: deck.slice(8),
+    discard: [],
+    players: [
+      { hand: deck.slice(0, 4), banco: [], debito: 11, name: 'Giocatore 1' },
+      { hand: deck.slice(4, 8), banco: [], debito: 11, name: 'Giocatore 2' }
+    ],
+    phase: 'exchange_p1',
+    exchanges: [null, null],
+    plays: [null, null],
+    jokerQueue: [],
+    bancoQueue: [],
+    selectedCards: [],
+    lastResult: null,
+    turn: 1
+  };
+  render();
+}
+
+// ============================
+// RESOLUTION
+// ============================
+function resolveRound(play0, play1) {
+  const notes = [];
+
+  // Get effective card (joker → copy, multi → virtual numeric)
+  function eff(play) {
+    const main = play.cards[0];
+    if (main.value === 'JOKER') {
+      return play.jokerCopy ? play.jokerCopy : { value: '1', suit: null, _zero: true };
+    }
+    if (play.cards.length > 1) {
+      const tot = playTotalValue(play);
+      return { value: String(tot), suit: null, _multi: true };
+    }
+    return main;
+  }
+
+  const e0 = eff(play0);
+  const e1 = eff(play1);
+
+  function getType(e) {
+    const v = e.value;
+    if (v === 'A') return 'ACE';
+    if (v === 'J') return 'JACK';
+    if (v === 'Q') return 'QUEEN';
+    if (v === 'K') return 'KING';
+    if (v === 'JOKER') return 'ZERO';
+    const n = parseInt(v);
+    if (!isNaN(n)) return n % 2 === 0 ? 'EVEN' : 'ODD';
+    return 'UNKNOWN';
+  }
+
+  const t0 = getType(e0);
+  const t1 = getType(e1);
+  const n0 = parseInt(e0.value) || 0;
+  const n1 = parseInt(e1.value) || 0;
+
+  let winner = 'draw';
+  let doubleDebito = false;
+  let halfDebito = false;
+
+  // King beats everything except Ace
+  if (t0 === 'KING' && t1 !== 'ACE') { winner = 0; halfDebito = true; }
+  else if (t1 === 'KING' && t0 !== 'ACE') { winner = 1; halfDebito = true; }
+  // Ace vs figures
+  else if (t0 === 'ACE' && (t1 === 'JACK' || t1 === 'QUEEN' || t1 === 'KING')) { winner = 0; doubleDebito = true; }
+  else if (t1 === 'ACE' && (t0 === 'JACK' || t0 === 'QUEEN' || t0 === 'KING')) { winner = 1; doubleDebito = true; }
+  // Ace vs numeric
+  else if (t0 === 'ACE' && (t1 === 'EVEN' || t1 === 'ODD')) { winner = 1; }
+  else if (t1 === 'ACE' && (t0 === 'EVEN' || t0 === 'ODD')) { winner = 0; }
+  // Jack
+  else if (t0 === 'JACK') {
+    if (t1 === 'ODD') { winner = 0; }
+    else if (t1 === 'EVEN') { winner = 1; }
+    else if (t1 === 'QUEEN') { winner = 1; }
+    // else draw (vs Jack)
+  } else if (t1 === 'JACK') {
+    if (t0 === 'ODD') { winner = 1; }
+    else if (t0 === 'EVEN') { winner = 0; }
+    else if (t0 === 'QUEEN') { winner = 0; }
+  }
+  // Queen
+  else if (t0 === 'QUEEN') {
+    if (t1 === 'EVEN') { winner = 0; }
+    else if (t1 === 'ODD') { winner = 1; }
+    // else draw (vs Queen)
+  } else if (t1 === 'QUEEN') {
+    if (t0 === 'EVEN') { winner = 1; }
+    else if (t0 === 'ODD') { winner = 0; }
+  }
+  // Numeric vs numeric
+  else if ((t0 === 'EVEN' || t0 === 'ODD') && (t1 === 'EVEN' || t1 === 'ODD')) {
+    if (n0 > n1) winner = 0;
+    else if (n1 > n0) winner = 1;
+    else winner = 'draw';
+  }
+  // Same figure vs same: draw (already 'draw')
+
+  if (winner === 'draw') {
+    notes.push('Pareggio — nessun Debito™ assegnato.');
+    return { winner: 'draw', p0Debito: 0, p1Debito: 0, notes, jokerWon: false };
+  }
+
+  const loser = winner === 0 ? 1 : 0;
+  let loserDebito = loser === 0 ? getBaseDebito(play0) : getBaseDebito(play1);
+
+  const winnerPlay = winner === 0 ? play0 : play1;
+  const jokerWon = winnerPlay.cards[0].value === 'JOKER';
+
+  if (doubleDebito) {
+    loserDebito *= 2;
+    notes.push("L'Asso infligge il doppio del Debito™!");
+  }
+  if (halfDebito) {
+    loserDebito = Math.ceil(loserDebito / 2);
+    notes.push("Il Re dimezza il Debito™ subito (arrotondato per eccesso).");
+  }
+
+  notes.push(`${G.players[loser].name} +${loserDebito} Debito™ → ${G.players[winner].name} −${loserDebito} Debito™.`);
+
+  return {
+    winner,
+    p0Debito: loser === 0 ? loserDebito : 0,
+    p1Debito: loser === 1 ? loserDebito : 0,
+    notes,
+    jokerWon
+  };
+}
+
+// ============================
+// CARD HTML
+// ============================
+function cardHTML(card, size = 'normal') {
+  if (!card) return '';
+  const small = size === 'small';
+  const w = small ? 50 : 70;
+  const h = small ? 72 : 100;
+
+  if (card.value === 'JOKER') {
+    return `<div class="card joker-card" style="width:${w}px;height:${h}px">
+      <div class="card-corner tl" style="color:#c9a96e">★<br>J</div>
+      <div class="card-center">🃏</div>
+      <div class="card-corner br" style="color:#c9a96e">J<br>★</div>
+    </div>`;
+  }
+
+  const isRed = card.suit && RED_SUITS.has(card.suit);
+  const cls = `card ${isRed ? 'red' : 'black'}`;
+  const suitSymbol = card.suit || '';
+  const centerSuit = card.value === '10' ? suitSymbol : suitSymbol;
+
+  return `<div class="${cls}" style="width:${w}px;height:${h}px">
+    <div class="card-corner tl">${card.value}<br>${suitSymbol}</div>
+    <div class="card-center">${suitSymbol}</div>
+    <div class="card-corner br">${card.value}<br>${suitSymbol}</div>
+  </div>`;
+}
+
+function cardFaceDown(size = 'normal') {
+  const small = size === 'small';
+  const w = small ? 50 : 70;
+  const h = small ? 72 : 100;
+  return `<div class="card face-down" style="width:${w}px;height:${h}px">
+    <div class="card-back-pattern">✦</div>
+  </div>`;
+}
+
+function cardWrapperHTML(card, idx, opts = {}) {
+  const { selected = false, disabled = false, fromBanco = false, onclick = '', showDebito = true } = opts;
+  const selClass = selected ? 'selected' : '';
+  const disClass = disabled ? 'disabled' : '';
+  return `<div class="card-wrapper ${selClass} ${disClass}" onclick="${onclick}">
+    ${cardHTML(card)}
+    ${showDebito ? `<div class="card-debito">D™${card.value === 'JOKER' ? '?' : cardDebitoVal(card)}</div>` : ''}
+    ${fromBanco ? `<div class="card-source banco">Banco</div>` : `<div class="card-source">Mano</div>`}
+  </div>`;
+}
+
+// ============================
+// HEADER
+// ============================
+function headerHTML() {
+  const p0 = G.players[0];
+  const p1 = G.players[1];
+
+  function pipClass(i, total, current) {
+    if (i >= total) return '';
+    return i < current ? 'pip on' : 'pip off';
+  }
+
+  function pipsHTML(current, max) {
+    let h = '';
+    for (let i = 0; i < max; i++) {
+      h += `<div class="${i < current ? 'pip on' : 'pip off'}"></div>`;
+    }
+    return h;
+  }
+
+  const maxDebito = 11;
+  const d0Class = p0.debito <= 3 ? 'debito-value danger' : p0.debito === 0 ? 'debito-value safe' : 'debito-value';
+  const d1Class = p1.debito <= 3 ? 'debito-value danger' : p1.debito === 0 ? 'debito-value safe' : 'debito-value';
+
+  return `<div class="header">
+    <div class="debito-bar">
+      <div class="player-debito p1">
+        <div class="player-name">${p0.name}</div>
+        <div class="debito-display">
+          <div class="debito-label">DEBITO™</div>
+          <div class="${d0Class}">${p0.debito}</div>
+        </div>
+        <div class="pip-bar">${pipsHTML(p0.debito, maxDebito)}</div>
+      </div>
+      <div class="game-title-header">DEBITO™</div>
+      <div class="player-debito p2">
+        <div class="player-name">${p1.name}</div>
+        <div class="debito-display">
+          <div class="${d1Class}">${p1.debito}</div>
+          <div class="debito-label">DEBITO™</div>
+        </div>
+        <div class="pip-bar">${pipsHTML(p1.debito, maxDebito)}</div>
+      </div>
+    </div>
+    <div class="turn-info">Turno ${G.turn} · Mazzo: ${G.deck.length} carte · Totale Debito™: ${G.players[0].debito + G.players[1].debito}</div>
+  </div>`;
+}
+
+// ============================
+// RENDER
+// ============================
+function render() {
+  const app = document.getElementById('app');
+  if (!G) {
+    app.innerHTML = startScreenHTML();
+    return;
+  }
+
+  let html = headerHTML();
+  html += '<div class="main-content">';
+
+  switch (G.phase) {
+    case 'exchange_p1':    html += exchangeHTML(0); break;
+    case 'cover_ex_p2':   html += coverHTML(`Passa il computer a ${G.players[1].name}`, 'continua_cover_ex_p2'); break;
+    case 'exchange_p2':   html += exchangeHTML(1); break;
+    case 'cover_play_p1': html += coverHTML(`Passa il computer a ${G.players[0].name}`, 'continua_cover_play_p1'); break;
+    case 'play_p1':       html += playHTML(0); break;
+    case 'cover_play_p2': html += coverHTML(`Passa il computer a ${G.players[1].name}`, 'continua_cover_play_p2'); break;
+    case 'play_p2':       html += playHTML(1); break;
+    case 'joker_pick':    html += jokerPickHTML(); break;
+    case 'reveal':        html += revealHTML(); break;
+    case 'banco_bonus':   html += bancoBonusHTML(); break;
+    case 'game_over':     html += gameOverHTML(); break;
+  }
+
+  html += '</div>';
+  app.innerHTML = html;
+}
+
+// ============================
+// START SCREEN
+// ============================
+function startScreenHTML() {
+  return `<div class="main-content">
+    <div class="start-screen">
+      <div class="start-logo">DEBITO™</div>
+      <div class="start-subtitle">Un gioco psicologico per 2 giocatori</div>
+      <div class="start-separator"></div>
+
+      <div class="rules-summary">
+        <h3>Come si gioca</h3>
+        <div class="rule-item"><span class="rule-card-label">Obiettivo</span><span>Arrivare a 0 Debito™ (si inizia con 11). Il perdente di ogni round subisce Debito™ pari al valore della <em>propria</em> carta.</span></div>
+        <div class="rule-item"><span class="rule-card-label">Asso</span><span>Batte le figure (doppio danno), perde contro i numeri. Debito™: 1.</span></div>
+        <div class="rule-item"><span class="rule-card-label">Jack</span><span>Batte i dispari (3,5,7,9), perde contro i pari e la Regina. Debito™: 5.</span></div>
+        <div class="rule-item"><span class="rule-card-label">Regina</span><span>Batte i pari (2,4,6,8,10), perde contro i dispari e il Re. Debito™: 6.</span></div>
+        <div class="rule-item"><span class="rule-card-label">Re</span><span>Batte tutto tranne l'Asso. Il perdente subisce solo metà Debito™. Debito™: 7.</span></div>
+        <div class="rule-item"><span class="rule-card-label">Joker</span><span>Copia il valore di una carta in mano. Non può vincere la partita (avversario scende a min. 1).</span></div>
+        <div class="rule-item"><span class="rule-card-label">Multi</span><span>Puoi giocare più carte dello stesso numero (non figure). I valori si sommano, ma il Debito™ subito è di una singola carta.</span></div>
+      </div>
+
+      <button class="btn btn-primary" onclick="initGame()">Inizia Partita</button>
+    </div>
+  </div>`;
+}
+
+// ============================
+// COVER SCREEN
+// ============================
+function coverHTML(msg, action) {
+  return `<div class="cover-screen">
+    <div class="cover-icon">🙈</div>
+    <div class="cover-message">${msg}</div>
+    <p class="cover-sub">L'altro giocatore deve distogliere lo sguardo dallo schermo</p>
+    <button class="btn btn-primary" onclick="doAction('${action}')">Sono pronto — Mostra le mie carte</button>
+  </div>`;
+}
+
+// ============================
+// EXCHANGE
+// ============================
+function exchangeHTML(pIdx) {
+  const p = G.players[pIdx];
+  const selected = G.exchanges[pIdx];
+
+  // Only hand cards can be exchanged (not banco cards)
+  const cards = p.hand.map(card => {
+    const isSel = selected && selected.id === card.id;
+    return cardWrapperHTML(card, card.id, {
+      selected: isSel,
+      onclick: `doAction('exchange_select', ${pIdx}, ${card.id})`,
+      showDebito: true,
+      fromBanco: false
+    });
+  }).join('');
+
+  const bancoCount = p.banco.length;
+
+  return `<div class="phase-screen">
+    <div class="phase-title">⇆ Scambio Segreto</div>
+    <div class="phase-subtitle">${p.name} — Scegli 1 carta dalla mano da passare all'avversario</div>
+    ${bancoCount > 0 ? `<p style="text-align:center;color:#5bc8af;font-style:italic;font-size:0.85rem;margin-bottom:8px">Hai ${bancoCount} carta${bancoCount > 1 ? 'e' : ''} nel Banco (non scambiabili)</p>` : ''}
+    <div class="hand-container">${cards}</div>
+    <div class="action-bar">
+      ${selected
+        ? `<div class="selected-info">Carte selezionata: <strong>${selected.value}${selected.suit || ''}</strong></div>
+           <button class="btn btn-primary" onclick="doAction('exchange_confirm', ${pIdx})">Conferma →</button>`
+        : `<div class="hint">Seleziona una carta dalla mano</div>`
+      }
+    </div>
+  </div>`;
+}
+
+// ============================
+// PLAY
+// ============================
+function playHTML(pIdx) {
+  const p = G.players[pIdx];
+  const sel = G.selectedCards;
+  const firstCard = sel.length > 0 ? sel[0] : null;
+
+  function isCardSelectable(card) {
+    if (!firstCard) return true;
+    if (firstCard.id === card.id) return true; // already selected
+    // Can only multi-play same numeric value
+    if (!isNumCard(firstCard)) return false;
+    if (!isNumCard(card)) return false;
+    if (card.value !== firstCard.value) return false;
+    return true;
+  }
+
+  const handCards = p.hand.map(card => {
+    const isSel = !!sel.find(c => c.id === card.id);
+    const isDisabled = !isCardSelectable(card) && !isSel;
+    return cardWrapperHTML(card, card.id, {
+      selected: isSel,
+      disabled: isDisabled,
+      fromBanco: false,
+      onclick: `doAction('play_select', ${pIdx}, ${card.id}, false)`,
+      showDebito: true
+    });
+  }).join('');
+
+  const bancoCards = p.banco.map(card => {
+    const isSel = !!sel.find(c => c.id === card.id);
+    const isDisabled = !isCardSelectable(card) && !isSel;
+    return cardWrapperHTML(card, card.id, {
+      selected: isSel,
+      disabled: isDisabled,
+      fromBanco: true,
+      onclick: `doAction('play_select', ${pIdx}, ${card.id}, true)`,
+      showDebito: true
+    });
+  }).join('');
+
+  const totalVal = sel.length > 1 ? playTotalValue({ cards: sel }) : null;
+  const singleDebito = sel.length > 0 ? (sel[0].value === 'JOKER' ? '?' : cardDebitoVal(sel[0])) : null;
+
+  return `<div class="phase-screen">
+    <div class="phase-title">♟ Scelta della Carta</div>
+    <div class="phase-subtitle">${p.name} — Scegli la carta da giocare (coperta)</div>
+
+    <div class="hand-container">${handCards}</div>
+
+    ${p.banco.length > 0 ? `
+      <div class="section-divider banco">📤 Banco delle Carte (${p.banco.length})</div>
+      <div class="hand-container">${bancoCards}</div>
+    ` : ''}
+
+    <div class="action-bar">
+      ${sel.length > 0
+        ? `<div class="selected-info">
+            Giochi: ${sel.map(c => c.value + (c.suit || '')).join(' + ')}
+            ${totalVal !== null ? ` = <strong>${totalVal}</strong> (Debito™ a rischio: ${singleDebito})` : ` (Debito™ a rischio: ${singleDebito})`}
+           </div>
+           <button class="btn btn-primary" onclick="doAction('play_confirm', ${pIdx})">Conferma →</button>`
+        : `<div class="hint">Seleziona una carta dalla mano o dal Banco</div>`
+      }
+    </div>
+  </div>`;
+}
+
+// ============================
+// JOKER PICK
+// ============================
+function jokerPickHTML() {
+  const pIdx = G.jokerQueue[0];
+  const p = G.players[pIdx];
+
+  // Show both played cards (revealed)
+  const otherIdx = 1 - pIdx;
+  const myPlay = G.plays[pIdx];
+  const theirPlay = G.plays[otherIdx];
+
+  // Available cards: hand + banco, excluding played joker
+  const available = [...p.hand, ...p.banco].filter(c => !myPlay.cards.find(pc => pc.id === c.id));
+
+  const cards = available.map(card =>
+    `<div class="card-wrapper" onclick="doAction('joker_copy', ${pIdx}, ${card.id})">
+      ${cardHTML(card)}
+      <div class="card-debito">D™${cardDebitoVal(card)} → Joker vale questo</div>
+    </div>`
+  ).join('');
+
+  return `<div class="phase-screen joker-pick-screen">
+    <div class="joker-banner">
+      <div class="joker-banner-title">🃏 Il Joker Svela</div>
+      <div class="joker-banner-sub">${p.name} — Scegli quale carta il Joker deve imitare</div>
+    </div>
+
+    <div class="played-preview">
+      <div class="played-preview-side">
+        <div class="played-preview-name">${G.players[0].name}</div>
+        ${G.plays[0].cards.map(c => cardHTML(c, 'small')).join('')}
+      </div>
+      <div style="color:var(--text-dim);font-size:1.2rem;align-self:center">VS</div>
+      <div class="played-preview-side">
+        <div class="played-preview-name">${G.players[1].name}</div>
+        ${G.plays[1].cards.map(c => cardHTML(c, 'small')).join('')}
+      </div>
+    </div>
+
+    <div class="hand-container">${cards || '<div class="hint">Nessuna carta disponibile — il Joker vale 1.</div>'}</div>
+
+    ${!available.length ? `<div class="action-bar"><button class="btn btn-primary" onclick="doAction('joker_copy', ${pIdx}, -1)">Continua</button></div>` : ''}
+  </div>`;
+}
+
+// ============================
+// REVEAL
+// ============================
+function revealHTML() {
+  const result = resolveRound(G.plays[0], G.plays[1]);
+  G.lastResult = result;
+
+  // Apply Debito now (only once — flag to avoid double apply)
+  if (!G._resultApplied) {
+    G._resultApplied = true;
+    G._appliedAmount = 0;
+    G._appliedLoser = -1;
+
+    if (result.winner !== 'draw') {
+      const loserIdx = result.winner === 0 ? 1 : 0;
+      const winnerIdx = result.winner;
+      let amount = loserIdx === 0 ? result.p0Debito : result.p1Debito;
+
+      // Joker can't WIN the game: cap so the winner's debito stays at min 1
+      if (result.jokerWon) {
+        const maxAllowed = G.players[winnerIdx].debito - 1;
+        if (amount > maxAllowed) amount = Math.max(0, maxAllowed);
+      }
+
+      // Transfer: loser GAINS debito (BAD), winner LOSES debito (GOOD)
+      G.players[loserIdx].debito += amount;
+      G.players[winnerIdx].debito -= amount;
+      G.players[winnerIdx].debito = Math.max(0, G.players[winnerIdx].debito);
+
+      G._appliedAmount = amount;
+      G._appliedLoser = loserIdx;
+    }
+  }
+
+  const play0 = G.plays[0];
+  const play1 = G.plays[1];
+  const appliedAmount = G._appliedAmount;
+  const appliedLoser  = G._appliedLoser;
+  // aD0 / aD1: positive = how much each player's debito CHANGED (+gain / -lose)
+  const aD0 = appliedLoser === 0 ? +appliedAmount : (appliedLoser === 1 ? -appliedAmount : 0);
+  const aD1 = appliedLoser === 1 ? +appliedAmount : (appliedLoser === 0 ? -appliedAmount : 0);
+
+  const gameOver = G.players[0].debito <= 0 || G.players[1].debito <= 0;
+
+  let winnerBanner = '';
+  if (result.winner === 'draw') {
+    winnerBanner = `<div class="reveal-draw-banner">🤝 Pareggio — nessun Debito™ assegnato</div>`;
+  } else {
+    const wName = G.players[result.winner].name;
+    winnerBanner = `<div class="reveal-winner-banner">🏆 ${wName} vince il turno</div>`;
+  }
+
+  function sideHTML(play, pIdx) {
+    const delta = pIdx === 0 ? aD0 : aD1; // positive = gained debito (loser), negative = lost debito (winner)
+    let deltaEl = '';
+    if (delta > 0)       deltaEl = `<div class="debito-loss">+${delta} Debito™ ↑</div>`;
+    else if (delta < 0)  deltaEl = `<div class="debito-gain">−${Math.abs(delta)} Debito™ ↓</div>`;
+    else                 deltaEl = `<div style="color:var(--text-dim);font-style:italic;font-size:0.9rem">nessuna variazione</div>`;
+    return `<div class="reveal-side">
+      <div class="reveal-player-name">${G.players[pIdx].name}</div>
+      <div class="hand-container">${play.cards.map(c => cardHTML(c)).join('')}</div>
+      ${play.cards[0].value === 'JOKER' && play.jokerCopy
+        ? `<div class="joker-copy-label">🃏 Copia: ${play.jokerCopy.value}${play.jokerCopy.suit || ''} (D™${cardDebitoVal(play.jokerCopy)})</div>` : ''}
+      ${play.cards.length > 1 ? `<div class="combo-value">Totale: ${playTotalValue(play)}</div>` : ''}
+      ${deltaEl}
+      <div style="font-size:0.85rem;color:var(--text-dim)">Debito™ ora: ${G.players[pIdx].debito}</div>
+    </div>`;
+  }
+
+  return `<div class="phase-screen">
+    <div class="phase-title">Rivelazione</div>
+    ${winnerBanner}
+
+    <div class="reveal-area">
+      ${sideHTML(play0, 0)}
+      <div class="vs-divider">VS</div>
+      ${sideHTML(play1, 1)}
+    </div>
+
+    <div class="result-notes">
+      ${result.notes.map(n => `<div class="note">· ${n}</div>`).join('')}
+      ${result.jokerWon ? '<div class="note" style="color:#9b8dc0">· Il Joker non può vincere la partita: il Debito™ avversario si ferma ad almeno 1.</div>' : ''}
+    </div>
+
+    <div class="action-bar">
+      ${gameOver
+        ? `<button class="btn btn-primary" onclick="doAction('to_game_over')">Fine Partita →</button>`
+        : `<button class="btn btn-primary" onclick="doAction('after_reveal')">Continua →</button>`
+      }
+    </div>
+  </div>`;
+}
+
+// ============================
+// BANCO BONUS
+// ============================
+function bancoBonusHTML() {
+  const pIdx = G.bancoQueue[0];
+  const p = G.players[pIdx];
+  const all = [...p.hand, ...p.banco];
+
+  const cards = all.map(card => {
+    const fromBanco = !!p.banco.find(b => b.id === card.id);
+    return `<div class="card-wrapper" onclick="doAction('banco_discard', ${pIdx}, ${card.id})">
+      ${cardHTML(card)}
+      <div class="card-debito">D™${card.value === 'JOKER' ? '?' : cardDebitoVal(card)}</div>
+      <div class="card-source ${fromBanco ? 'banco' : ''}">${fromBanco ? 'Banco' : 'Mano'}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="phase-screen">
+    <div class="phase-title">🎁 Bonus del Banco</div>
+    <div class="phase-subtitle">${p.name} ha giocato una carta del Banco — puoi scartare 1 carta (opzionale)</div>
+    <div class="hand-container">${cards || '<div class="hint">Nessuna carta da scartare.</div>'}</div>
+    <div class="action-bar">
+      <button class="btn btn-secondary" onclick="doAction('banco_skip')">Salta</button>
+    </div>
+  </div>`;
+}
+
+// ============================
+// GAME OVER
+// ============================
+function gameOverHTML() {
+  const d0 = G.players[0].debito;
+  const d1 = G.players[1].debito;
+  let msg;
+
+  if (d0 <= 0 && d1 <= 0) msg = 'Pareggio!';
+  else if (d0 <= 0) msg = `${G.players[0].name} è libero dal Debito™!`;
+  else if (d1 <= 0) msg = `${G.players[1].name} è libero dal Debito™!`;
+  else if (d0 < d1) msg = `${G.players[0].name} vince — meno Debito™!`;
+  else if (d1 < d0) msg = `${G.players[1].name} vince — meno Debito™!`;
+  else msg = 'Pareggio — stesso Debito™ rimasto!';
+
+  return `<div class="game-over-screen">
+    <div class="game-over-title">— Fine Partita —</div>
+    <div class="game-over-winner">${msg}</div>
+    <div class="game-over-scores">
+      <div>${G.players[0].name}: <strong>${d0}</strong> Debito™</div>
+      <div>${G.players[1].name}: <strong>${d1}</strong> Debito™</div>
+    </div>
+    <button class="btn btn-primary" onclick="doAction('restart')">Nuova Partita</button>
+  </div>`;
+}
+
+// ============================
+// ACTION DISPATCHER
+// ============================
+function doAction(action, ...args) {
+  switch (action) {
+
+    // Cover transitions
+    case 'continua_cover_ex_p2':
+      G.phase = 'exchange_p2';
+      break;
+
+    case 'continua_cover_play_p1':
+      G.phase = 'play_p1';
+      G.selectedCards = [];
+      break;
+
+    case 'continua_cover_play_p2':
+      G.phase = 'play_p2';
+      G.selectedCards = [];
+      break;
+
+    // Exchange
+    case 'exchange_select': {
+      const [pIdx, cardId] = args;
+      const card = G.players[pIdx].hand.find(c => c.id === cardId);
+      if (card) G.exchanges[pIdx] = card;
+      break;
+    }
+
+    case 'exchange_confirm': {
+      const [pIdx] = args;
+      if (!G.exchanges[pIdx]) return;
+      if (pIdx === 0) {
+        G.phase = 'cover_ex_p2';
+      } else {
+        // Execute both exchanges
+        const ex0 = G.exchanges[0];
+        const ex1 = G.exchanges[1];
+        G.players[0].hand = G.players[0].hand.filter(c => c.id !== ex0.id);
+        G.players[1].hand = G.players[1].hand.filter(c => c.id !== ex1.id);
+        // Mark as banco (non re-scambiabile)
+        ex0.fromExchange = true;
+        ex1.fromExchange = true;
+        G.players[1].banco.push(ex0);
+        G.players[0].banco.push(ex1);
+        G.phase = 'cover_play_p1';
+      }
+      break;
+    }
+
+    // Play selection
+    case 'play_select': {
+      const [pIdx, cardId] = args;
+      const p = G.players[pIdx];
+      const card = [...p.hand, ...p.banco].find(c => c.id === cardId);
+      if (!card) return;
+
+      const alreadySel = G.selectedCards.find(c => c.id === card.id);
+      if (alreadySel) {
+        G.selectedCards = G.selectedCards.filter(c => c.id !== card.id);
+        break;
+      }
+
+      if (G.selectedCards.length === 0) {
+        G.selectedCards = [card];
+      } else {
+        const first = G.selectedCards[0];
+        if (isNumCard(first) && isNumCard(card) && card.value === first.value) {
+          G.selectedCards.push(card);
+        } else {
+          G.selectedCards = [card];
+        }
+      }
+      break;
+    }
+
+    case 'play_confirm': {
+      const [pIdx] = args;
+      if (G.selectedCards.length === 0) return;
+
+      const p = G.players[pIdx];
+      const usedBanco = G.selectedCards.some(c => p.banco.find(b => b.id === c.id));
+
+      G.plays[pIdx] = {
+        cards: [...G.selectedCards],
+        jokerCopy: null,
+        usedBanco
+      };
+
+      G.selectedCards = [];
+
+      if (pIdx === 0) {
+        G.phase = 'cover_play_p2';
+      } else {
+        // Both have played — check for jokers
+        const jokerQueue = [];
+        if (G.plays[0].cards[0].value === 'JOKER') jokerQueue.push(0);
+        if (G.plays[1].cards[0].value === 'JOKER') jokerQueue.push(1);
+        G.jokerQueue = jokerQueue;
+        G.phase = jokerQueue.length > 0 ? 'joker_pick' : 'reveal';
+        G._resultApplied = false;
+      }
+      break;
+    }
+
+    // Joker copy
+    case 'joker_copy': {
+      const [pIdx, cardId] = args;
+      if (cardId === -1) {
+        G.plays[pIdx].jokerCopy = null;
+      } else {
+        const p = G.players[pIdx];
+        const myPlay = G.plays[pIdx];
+        const available = [...p.hand, ...p.banco].filter(c => !myPlay.cards.find(pc => pc.id === c.id));
+        G.plays[pIdx].jokerCopy = available.find(c => c.id === cardId) || null;
+      }
+      G.jokerQueue.shift();
+      G.phase = G.jokerQueue.length > 0 ? 'joker_pick' : 'reveal';
+      G._resultApplied = false;
+      break;
+    }
+
+    // After reveal
+    case 'after_reveal': {
+      // Discard played cards, remove from hands
+      G.plays.forEach((play, pIdx) => {
+        if (!play) return;
+        play.cards.forEach(c => G.discard.push(c));
+        G.players[pIdx].hand = G.players[pIdx].hand.filter(c => !play.cards.find(pc => pc.id === c.id));
+        G.players[pIdx].banco = G.players[pIdx].banco.filter(c => !play.cards.find(pc => pc.id === c.id));
+      });
+
+      // Banco bonus
+      const bancoQueue = [];
+      if (G.plays[0]?.usedBanco) bancoQueue.push(0);
+      if (G.plays[1]?.usedBanco) bancoQueue.push(1);
+      G.bancoQueue = bancoQueue;
+
+      if (bancoQueue.length > 0) {
+        G.phase = 'banco_bonus';
+      } else {
+        drawAndNextTurn();
+        return;
+      }
+      break;
+    }
+
+    case 'to_game_over': {
+      // Discard played cards
+      G.plays.forEach((play, pIdx) => {
+        if (!play) return;
+        play.cards.forEach(c => G.discard.push(c));
+        G.players[pIdx].hand = G.players[pIdx].hand.filter(c => !play.cards.find(pc => pc.id === c.id));
+        G.players[pIdx].banco = G.players[pIdx].banco.filter(c => !play.cards.find(pc => pc.id === c.id));
+      });
+      G.phase = 'game_over';
+      break;
+    }
+
+    // Banco bonus
+    case 'banco_discard': {
+      const [pIdx, cardId] = args;
+      const p = G.players[pIdx];
+      const card = [...p.hand, ...p.banco].find(c => c.id === cardId);
+      if (!card) return;
+      p.hand = p.hand.filter(c => c.id !== cardId);
+      p.banco = p.banco.filter(c => c.id !== cardId);
+      G.discard.push(card);
+      G.bancoQueue.shift();
+      if (G.bancoQueue.length > 0) break;
+      drawAndNextTurn();
+      return;
+    }
+
+    case 'banco_skip': {
+      G.bancoQueue.shift();
+      if (G.bancoQueue.length > 0) break;
+      drawAndNextTurn();
+      return;
+    }
+
+    case 'restart':
+      initGame();
+      return;
+  }
+
+  render();
+}
+
+function drawAndNextTurn() {
+  // Draw until total cards (hand + banco) = 4
+  for (let i = 0; i < 2; i++) {
+    while (G.players[i].hand.length + G.players[i].banco.length < 4 && G.deck.length > 0) {
+      G.players[i].hand.push(G.deck.shift());
+    }
+  }
+
+  // Check game over (deck empty, no cards)
+  const anyCards0 = G.players[0].hand.length + G.players[0].banco.length > 0;
+  const anyCards1 = G.players[1].hand.length + G.players[1].banco.length > 0;
+
+  if (!anyCards0 && !anyCards1 && G.deck.length === 0) {
+    G.phase = 'game_over';
+    render();
+    return;
+  }
+
+  G.plays = [null, null];
+  G.exchanges = [null, null];
+  G._resultApplied = false;
+  G.turn++;
+
+  // If a player has no hand cards, skip exchange for them
+  // Actually if both have no hand cards, skip exchange entirely
+  const p0HasHand = G.players[0].hand.length > 0;
+  const p1HasHand = G.players[1].hand.length > 0;
+
+  if (!p0HasHand && !p1HasHand) {
+    // Skip exchange, go straight to play
+    G.phase = 'play_p1';
+    G.selectedCards = [];
+  } else {
+    G.phase = 'exchange_p1';
+  }
+
+  render();
+}
+
+// ============================
+// BOOT
+// ============================
+document.addEventListener('DOMContentLoaded', () => {
+  const app = document.getElementById('app');
+  app.innerHTML = startScreenHTML();
+});
+</script>
+</body>
+</html>
