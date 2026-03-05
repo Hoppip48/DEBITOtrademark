@@ -1,0 +1,50 @@
+DEBITO™ 
+
+Players: 2
+Deck: 54 cards (including Jokers)
+Starting Debt™: 11 each
+Lose Condition: 22+ Debt™
+Debt Rule: Total Debt between players is constant. When one gains Debt™, the other loses the same amount.
+
+Setup
+
+Shuffle the deck.
+
+Deal 4 cards to each player.
+
+Turn Structure
+1. Secret Exchange
+
+Each player passes 1 card face down to the opponent.
+
+Received cards are placed face up in the Bank.
+
+Bank cards cannot be returned via exchange.
+
+2. Play
+
+Choose 1 card from hand or the Bank.
+
+You may temporarily pick up Bank cards before choosing (to hide the source).
+
+Play 1 card face down.
+
+3. Reveal
+
+Reveal simultaneously.
+
+4. Boost (Optional)
+
+After revealing, you may add matching-number cards from hand (pairs, triples, quads).
+
+Face cards cannot be combined.
+
+Combos:
+
+Deal damage equal to total sum.
+
+Apply Debt™ equal to the value of one card only.
+
+5. Bank Effect
+
+If you played a Bank card, discard 1 card from hand or Bank.
