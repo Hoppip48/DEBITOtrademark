@@ -1,0 +1,23 @@
+[project]
+name = "pytui"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "ascii-cards",
+    "linkify-it-py==2.1.0",
+    "markdown-it-py==4.0.0",
+    "mdit-py-plugins==0.5.0",
+    "mdurl==0.1.2",
+    "numpy==2.4.2",
+    "platformdirs==4.9.2",
+    "pygments==2.19.2",
+    "rich==14.3.3",
+    "textual==8.0.1",
+    "typing-extensions==4.15.0",
+    "uc-micro-py==2.0.0",
+]
+
+[tool.uv.sources]
+ascii-cards = { git = "https://github.com/PedroDLQ/ascii_cards.git", rev = "173127a758fbccfc05f6c442a28bbef8e1fec399" }

@@ -1,12 +1,12 @@
-ascii_cards @ git+https://github.com/PedroDLQ/ascii_cards.git@8606452c70e61586f8ad914ecc63e0b9f0a3060c
+ascii_cards @ git+https://github.com/PedroDLQ/ascii_cards.git@173127a758fbccfc05f6c442a28bbef8e1fec399
 linkify-it-py==2.1.0
 markdown-it-py==4.0.0
 mdit-py-plugins==0.5.0
 mdurl==0.1.2
+numpy==2.4.2
 platformdirs==4.9.2
 Pygments==2.19.2
 rich==14.3.3
-simple-ascii-cards==0.1
 textual==8.0.1
 typing_extensions==4.15.0
 uc-micro-py==2.0.0

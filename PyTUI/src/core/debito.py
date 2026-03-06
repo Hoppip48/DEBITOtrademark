@@ -42,8 +42,6 @@ class Player:
     bonus_discard: int = 0
 
 
-
-
 @dataclass
 class GameState:
     deck: list
@@ -241,7 +239,6 @@ class GameState:
         print("TURN\t\tP1 x P2")
         for i, turn in enumerate(self.discarded_pile):
             print(f"\t{i+1}\t\t{discard.pile[turn]}")
-
 
 
 def clear_terminal(): # OS invariant
